@@ -1,9 +1,11 @@
 local offset = 0x56454E
 
 local canExecute = false
+local CmdPointer = 0x02AE2CF0 - offset
+local Sys3Cmd = 0x00
 
-local valorAddr = 0x2A60214 - offset
-local saveAddr = 0x2A5A8A4 - offset
+local valorAddr = 0x00
+local saveAddr = 0x00
 local soraHP = 0x2A20C98 - offset
 local abilities = 0x2A20E68 - offset
 local allowGummi = 0xBEB690 - offset
@@ -32,17 +34,24 @@ end
 
 function _OnFrame()
 	if canExecute then
+		if Sys3Cmd == 0 then
+			Sys3Cmd = ReadLong(CmdPointer)
+		end
+		if Sys3Cmd == ReadLong(CmdPointer) then
+			valorAddr = Sys3Cmd+0x6334
+			saveAddr = Sys3Cmd+0x9C4
+		end
 		local input = ReadShort(0x29F8AC0-offset)
 		if (input == 2816) then 
-			if valor == "" then
-				valor = ReadString(valorAddr+2, 46)
-				save = ReadString(saveAddr+2, 46)
+			if valor == "" then --Valor's & Saves properties saved as a string, if the string is blank to "valor" variable.
+				valor = ReadString(valorAddr+2, 46, true)
+				save = ReadString(saveAddr+2, 46, true)
 			end
 			
-			if not hold then
+			if not hold then --If not holding the button combination down, restore HP and Auto Valor to normal.
 				savedHP = ReadByte(soraHP)
 				savedAbilities = ReadByte(abilities+2)
-				WriteString(valorAddr+2, save)
+				WriteString(valorAddr+2, save, true)
 			end
 			
 			counter = 30
@@ -53,8 +62,8 @@ function _OnFrame()
 			end
 			
 			hold = true
-		elseif ReadByte(valorAddr+2) == 0x37 then
-			WriteString(valorAddr+2, valor)
+		elseif ReadByte(valorAddr+2, true) == 0x37 then --If Valor is currently "Save", undo the changes.
+			WriteString(valorAddr+2, valor, true)
 			WriteByte(soraHP, savedHP)
 			WriteByte(abilities+2, savedAbilities)
 			hold = false
