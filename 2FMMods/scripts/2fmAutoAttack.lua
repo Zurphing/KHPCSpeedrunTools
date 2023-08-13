@@ -1,4 +1,6 @@
 local offset = 0x56450E
+local Sys3Cmd = 0x00
+local CmdPointer = 0x02AE2CB0 - offset
 
 local canExecute = false
 
@@ -19,6 +21,9 @@ end
 
 function _OnFrame()
 	if canExecute then
+		if Sys3Cmd == 0 then
+			Sys3Cmd = ReadLong(CmdPointer)
+		end
 		local attackButton = ReadByte(0x7804C1-offset-0x40)
 		local input = ReadByte(0x71148B-offset-0x40) == attackButton
 		local command = ReadByte(0x2A0DD7C-offset) == 0
@@ -26,9 +31,9 @@ function _OnFrame()
 		local inCombat = ReadByte(0x2A0EAC4-offset) & 3 > 0
 
 		if (input and command and dialog and inCombat) then 
-			WriteByte(0x2A5A056-offset, 0x1)
+			WriteByte(Sys3Cmd+0x1B6, 0x1, true)
 		else
-			WriteByte(0x2A5A056-offset, 0)
+			WriteByte(Sys3Cmd+0x1B6, 0, true)
 		end
 	end
 end
